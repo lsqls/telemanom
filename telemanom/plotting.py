@@ -27,6 +27,7 @@ class Plotter:
         self.run_id = run_id
         self.result_df = pd.read_csv(os.path.join('..', 'results', '{}.csv'
                                                   .format(self.run_id)))
+        self.labels = pd.read_csv("../labeled_anomalies.csv")
         self.labels_available = True if 'true_positives' \
                                         in self.result_df.columns else False
 
@@ -109,44 +110,44 @@ class Plotter:
             print('Total number of values evaluated: {}'
                   .format(self.result_df['num_test_values'].sum()))
 
-    def channel_result_summary(self, channel, plot_values):
+    def class_result_summary(self,spacecraft="SMAP"):
         """
-        Print results for a channel.
-
-        Args:
-            channel (obj): Channel class object containing train/test data
-                for X,y for a single channel
-            plot_values (dict): dictionary of different series to be plotted
-                (predicted, actual, errors, training data)
+        Print aggregated results.
         """
+        print("\nclass ",spacecraft)
 
-        if 'spacecraft' in channel:
-            print('Spacecraft: {}'.format(channel['spacecraft'].values[0]))
-
-        print('Channel: {}'.format(channel['chan_id'].values[0]))
-        print('Normalized prediction error: {0:.2f}'
-              .format(float(channel['normalized_pred_error'].values[0])))
-
+        channels=self.labels[self.labels['spacecraft']==spacecraft]['chan_id'].to_list()
+        class_result_df=self.result_df[self.result_df['chan_id'].isin(channels)] 
         if self.labels_available:
-            print('Anomaly class(es): {}'.format(channel['class'].values[0]))
-            print("------------------")
             print('True Positives: {}'
-                  .format(channel['true_positives'].values[0]))
+                  .format(class_result_df['true_positives'].sum()))
             print('False Positives: {}'
-                  .format(channel['false_positives'].values[0]))
-            print('False Negatives: {}'
-                  .format(channel['false_negatives'].values[0]))
-            print('------------------')
+                  .format(class_result_df['false_positives'].sum()))
+            print('False Negatives: {}\n'
+                  .format(class_result_df['false_negatives'].sum()))
+            try:
+                print('Precision: {0:.2f}'.format(
+                    float(class_result_df['true_positives'].sum()) /
+                    float(class_result_df['true_positives'].sum()
+                          + class_result_df['false_positives'].sum())))
+                print('Recall: {0:.2f}'.format(
+                    float(class_result_df['true_positives'].sum()) /
+                    float(class_result_df['true_positives'].sum()
+                        + class_result_df['false_negatives'].sum())))
+            except ZeroDivisionError:
+                print('Precision: NaN')
+                print('Recall: NaN')
         else:
-            print('Number of anomalies found: {}'
-                  .format(channel['n_predicted_anoms'].values[0]))
-            print('Anomaly sequences start/end indices: {}'
-                  .format(channel['anomaly_sequences'].values[0]))
-
-        print('Predicted anomaly scores: {}'.format(channel['anom_scores']
-                                                    .values[0]))
-        print('Number of values: {}'.format(len(plot_values['test'])))
-
+            print('Total channel sets evaluated: {}'
+                  .format(len(class_result_df)))
+            print('Total anomalies found: {}'
+                  .format(class_result_df['n_predicted_anoms'].sum()))
+            print('Avg normalized prediction error: {}'
+                  .format(class_result_df['normalized_pred_error'].mean()))
+            print('Total number of values evaluated: {}'
+                  .format(class_result_df['num_test_values'].sum()))
+        
+    
     def plot_channel(self, channel_id, plot_train=False, plot_errors=True):
         """
         Generate interactive plots for a channel. By default it prints actual

@@ -9,6 +9,8 @@ from telemanom.errors import Errors
 import telemanom.helpers as helpers
 from telemanom.channel import Channel
 from telemanom.modeling import Model
+import shutil
+
 
 logger = helpers.setup_logging()
 
@@ -60,7 +62,7 @@ class Detector:
             self.id = dt.now().strftime('%Y-%m-%d_%H.%M.%S')
 
         helpers.make_dirs(self.id)
-
+        shutil.copyfile(config_path, 'data/{}/config.yaml'.format(self.id))
         # add logging FileHandler based on ID
         hdlr = logging.FileHandler('data/logs/%s.log' % self.id)
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
