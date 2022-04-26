@@ -63,6 +63,7 @@ class Detector:
 
         helpers.make_dirs(self.id)
         shutil.copyfile(config_path, 'data/{}/config.yaml'.format(self.id))
+        shutil.copyfile(config_path, 'results/{}.config.yaml'.format(self.id))
         # add logging FileHandler based on ID
         hdlr = logging.FileHandler('data/logs/%s.log' % self.id)
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
